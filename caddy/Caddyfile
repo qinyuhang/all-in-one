@@ -4,7 +4,13 @@
 }
 
 admin.{$MY_DOMAIN}:8443 {
-    reverse_proxy 3x-ui:2053
+    handle /_hooks/blog {
+        reverse_proxy unix//srv/blog/.webhook/blog.sock
+    }
+
+    handle {
+        reverse_proxy 3x-ui:2053
+    }
 }
 
 sub.{$MY_DOMAIN}:8443 {
@@ -20,5 +26,13 @@ claw-ui.{$MY_DOMAIN}:8443 {
 }
 
 {$MY_DOMAIN}:8443 {
-    respond "vps gateway online" 200
+    root * /srv/blog/current
+    encode zstd gzip
+    file_server
+
+    handle_errors {
+        @not_found expression {err.status_code} == 404
+        rewrite @not_found /404.html
+        file_server
+    }
 }
