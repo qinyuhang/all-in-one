@@ -54,7 +54,7 @@ services:
     logging: *default-logging
 
   openclaw:
-    image: openclaw/openclaw:latest
+    image: ghcr.io/openclaw/openclaw:latest
     container_name: openclaw
     restart: unless-stopped
     environment:
