@@ -52,8 +52,10 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-      - edge-net
-      - app-net
+      edge-net:
+      app-net:
+        aliases:
+          - caddy.internal
     logging: *default-logging
 
   openclaw:
