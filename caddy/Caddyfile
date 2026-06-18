@@ -7,6 +7,10 @@ admin.{$MY_DOMAIN}:8443 {
     reverse_proxy 3x-ui:2053
 }
 
+sub.{$MY_DOMAIN}:8443 {
+    reverse_proxy 3x-ui:2096
+}
+
 claw.{$MY_DOMAIN}:8443 {
     reverse_proxy openclaw:3000
 }
