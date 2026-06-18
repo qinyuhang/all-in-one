@@ -38,7 +38,7 @@ services:
       ACME_EMAIL: ${ACME_EMAIL}
       CF_API_TOKEN: ${CF_API_TOKEN}
     ports:
-      - "8433:8443/tcp"
+      - "8443:8443/tcp"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/data:/data
