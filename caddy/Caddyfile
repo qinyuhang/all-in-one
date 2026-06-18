@@ -1,0 +1,20 @@
+{
+    email {$ACME_EMAIL}
+    acme_dns cloudflare {env.CF_API_TOKEN}
+}
+
+admin.{$MY_DOMAIN}:8443 {
+    reverse_proxy 3x-ui:2053
+}
+
+claw.{$MY_DOMAIN}:8443 {
+    reverse_proxy openclaw:3000
+}
+
+claw-ui.{$MY_DOMAIN}:8443 {
+    reverse_proxy open-webui:8080
+}
+
+{$MY_DOMAIN}:8443 {
+    respond "vps gateway online" 200
+}

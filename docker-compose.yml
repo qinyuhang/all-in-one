@@ -1,0 +1,96 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  3x-ui:
+    image: ghcr.io/mhsanaei/3x-ui:latest
+    container_name: 3x-ui
+    restart: unless-stopped
+    ports:
+      - "443:443/tcp"
+      - "443:443/udp"
+    volumes:
+      - ./3x-ui/db:/etc/x-ui
+      - ./3x-ui/config:/etc/xray
+    environment:
+      TZ: ${TZ}
+      XRAY_VMESS_AEAD_FORCED: "false"
+      XUI_ADMIN_USER: ${XUI_ADMIN_USER}
+      XUI_ADMIN_PWD: ${XUI_ADMIN_PWD}
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - edge-net
+      - app-net
+    logging: *default-logging
+
+  caddy:
+    image: ghcr.io/qinyuhang/caddy-cloudflare:2.8.4
+    container_name: caddy
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      MY_DOMAIN: ${MY_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CF_API_TOKEN: ${CF_API_TOKEN}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    depends_on:
+      - 3x-ui
+      - openclaw
+      - open-webui
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - app-net
+    logging: *default-logging
+
+  openclaw:
+    image: openclaw/openclaw:latest
+    container_name: openclaw
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      KIMI_API_KEY: ${KIMI_API_KEY:-change_me_kimi_api_key}
+    volumes:
+      - ./openclaw/config:/app/config
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - app-net
+    logging: *default-logging
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      ENABLE_SIGNUP: "false"
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      OPENAI_API_BASE_URL: ${OPENCLAW_BASE_URL}
+      OPENAI_API_KEY: ${KIMI_API_KEY:-change_me_kimi_api_key}
+    volumes:
+      - ./open-webui/data:/app/backend/data
+    depends_on:
+      - openclaw
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - app-net
+    logging: *default-logging
+
+networks:
+  edge-net:
+    driver: bridge
+  app-net:
+    driver: bridge
+    internal: true

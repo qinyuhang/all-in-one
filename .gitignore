@@ -1,2 +1,66 @@
+# ============================================================
+# Secrets & environment
+# ============================================================
 .env
+.env.local
+.env.*.local
+
+# ============================================================
+# Runtime data directories (generated at runtime, may contain
+# private keys, certificates, credentials, databases)
+# ============================================================
+
+# 3X-UI: Xray private keys, Reality keys, user DB
+3x-ui/db/**
+!3x-ui/db/.gitkeep
+3x-ui/config/**
+!3x-ui/config/.gitkeep
+
+# Caddy: TLS private keys, ACME account keys, runtime config cache
+caddy/data/**
+!caddy/data/.gitkeep
+caddy/config/**
+!caddy/config/.gitkeep
+
+# Open WebUI: user data, session DB, hashed passwords
+open-webui/data/**
+!open-webui/data/.gitkeep
+
+# OpenClaw: API keys, user config, session data
+openclaw/config/**
+!openclaw/config/.gitkeep
+
+# Monitoring runtime data (Docker volumes handle these, but guard
+# against accidental bind-mount data landing here)
+monitoring/grafana/data/**
+!monitoring/grafana/data/.gitkeep
+
+# ============================================================
+# Sensitive config files (use .example as template, real file
+# may contain tokens/webhook URLs and should never be committed)
+# ============================================================
+monitoring/alertmanager/alertmanager.yml
+
+# ============================================================
+# Common secret file extensions (defence in depth)
+# ============================================================
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================
+# OS & editor noise
+# ============================================================
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
