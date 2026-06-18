@@ -31,7 +31,7 @@ services:
     logging: *default-logging
 
   caddy:
-    image: ghcr.io/qinyuhang/caddy-cloudflare:2.8.4
+    image: ghcr.io/qinyuhang/caddy-cloudflare:latest
     container_name: caddy
     restart: unless-stopped
     environment:
