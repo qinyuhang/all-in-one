@@ -15,6 +15,8 @@ services:
     volumes:
       - ./3x-ui/db:/etc/x-ui
       - ./3x-ui/config:/etc/xray
+      # Expose Caddy-managed TLS certificates to 3x-ui (for example, Hysteria2).
+      - ./caddy/data:/caddy-data:ro
     environment:
       TZ: ${TZ}
       XRAY_VMESS_AEAD_FORCED: "false"

@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 # Bootstrap a NODE_* host for all-in-one edge-node usage:
 # - Ubuntu host network tuning: BBR, fq, forwarding, queues, limits.
+# - UDP GRO forwarding tuning for Tailscale exit-node throughput.
 # - Docker Engine via Docker's official apt repository.
 # - Tailscale install and optional exit-node advertisement with accept-dns=false.
 #
@@ -58,7 +59,8 @@ apt_install_base_packages() {
     curl \
     gnupg \
     lsb-release \
-    procps
+    procps \
+    ethtool
 }
 
 configure_sysctl() {
@@ -119,6 +121,57 @@ LimitNOFILE=1048576
 EOF
 
   systemctl daemon-reload
+}
+
+configure_tailscale_udp_gro() {
+  log "Configuring UDP GRO forwarding for Tailscale exit-node throughput"
+
+  local netdev
+  netdev="$(ip -o route get 8.8.8.8 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')"
+
+  if [[ -z "${netdev}" ]]; then
+    log "Cannot detect default route interface; skipping UDP GRO forwarding tuning"
+    return 0
+  fi
+
+  if ! command -v ethtool >/dev/null 2>&1; then
+    log "ethtool is missing; skipping UDP GRO forwarding tuning"
+    return 0
+  fi
+
+  ethtool -K "${netdev}" rx-udp-gro-forwarding on rx-gro-list off || true
+
+  install -m 0755 -d /usr/local/libexec /etc/systemd/system
+  cat >/usr/local/libexec/all-in-one-tailscale-udp-gro.sh <<'EOF'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+NETDEV="$(ip -o route get 8.8.8.8 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')"
+if [[ -z "${NETDEV}" ]]; then
+  exit 0
+fi
+
+ethtool -K "${NETDEV}" rx-udp-gro-forwarding on rx-gro-list off
+EOF
+  chmod 0755 /usr/local/libexec/all-in-one-tailscale-udp-gro.sh
+
+  cat >/etc/systemd/system/all-in-one-tailscale-udp-gro.service <<'EOF'
+[Unit]
+Description=Configure UDP GRO forwarding for Tailscale exit node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/all-in-one-tailscale-udp-gro.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable --now all-in-one-tailscale-udp-gro.service
 }
 
 install_docker_official_repo() {
@@ -273,6 +326,7 @@ main() {
   apt_install_base_packages
   configure_sysctl
   configure_limits
+  configure_tailscale_udp_gro
   install_docker_official_repo
   configure_docker_daemon
   install_tailscale
