@@ -1,0 +1,30 @@
+{
+    email {$ACME_EMAIL}
+    acme_dns cloudflare {env.CF_API_TOKEN}
+}
+
+admin.{$NODE_1_DOMAIN}:8443 {
+    handle /_hooks/blog {
+        reverse_proxy unix//srv/blog/.webhook/blog.sock
+    }
+
+    handle {
+        reverse_proxy 3x-ui:2053
+    }
+}
+
+sub.{$NODE_1_DOMAIN}:8443 {
+    reverse_proxy 3x-ui:2096
+}
+
+{$NODE_1_DOMAIN}:8443 {
+    root * /srv/blog/current
+    encode zstd gzip
+    file_server
+
+    handle_errors {
+        @not_found expression {err.status_code} == 404
+        rewrite @not_found /404.html
+        file_server
+    }
+}
