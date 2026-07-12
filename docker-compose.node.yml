@@ -12,8 +12,8 @@ services:
     ports:
       - "443:443/tcp"
       - "443:443/udp"
-      - "20000-20100:20000-20100/tcp"
-      - "20000-20100:20000-20100/udp"
+      - "20000:20000/tcp"
+      - "20000:20000/udp"
     volumes:
       - ./3x-ui/db:/etc/x-ui
       - ./3x-ui/config:/etc/xray
